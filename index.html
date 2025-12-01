@@ -183,17 +183,6 @@
       font-size: 0.82rem;
     }
 
-    .day-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0;
-      pointer-events: none;
-      background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.25), transparent 55%);
-      transition: opacity 0.12s ease-out;
-    }
-
     .day-card:hover:not(.locked) {
       transform: translateY(-2px);
       box-shadow: 0 18px 40px rgba(248, 113, 113, 0.55);
@@ -489,7 +478,6 @@
       background: rgba(248, 250, 252, 0.3);
       color: #7f1d1d;
     }
-
   </style>
 </head>
 <body>
@@ -525,7 +513,7 @@
         </div>
         <div class="note-debug">
           <strong>Note technique :</strong> les cases futures de décembre se verrouillent automatiquement.
-          Tu peux changer ce comportement dans le code (variable <code>debugAlwaysOpen</code>).
+          Pour tout tester d’un coup, tu peux mettre <code>debugAlwaysOpen = true</code> dans le script.
         </div>
       </section>
     </main>
@@ -556,9 +544,8 @@
 
   <script>
     // -------- PARAMÈTRES --------
-    const debugAlwaysOpen = false;
+    const debugAlwaysOpen = false; // passe à true si tu veux tout tester
 
-    // Contenu des 24 jours
     const daysData = [
       {
         day: 1,
@@ -569,7 +556,21 @@
           <p>Mon amour,</p>
           <p>On démarre ce calendrier rien que pour toi. Chaque jour de décembre, tu trouveras ici une pensée, un souvenir, un sourire ou un petit défi à partager ensemble.</p>
           <p>L’idée est simple : <strong>te rappeler chaque jour à quel point tu comptes pour moi</strong>, même au milieu du bazar du quotidien.</p>
-          <p>Si j’ai bien fait les choses, tu devrais aussi avoir un petit message audio quelque part dans ta journée pour accompagner tout ça.</p>
+          <p>
+            Pour accompagner ce premier jour, je t’ai préparé un petit message audio rien que pour toi.<br>
+            <a href="LIEN_J1_AUDIO" target="_blank" rel="noopener" style="
+              display:inline-block;
+              margin-top:8px;
+              padding:6px 12px;
+              border-radius:999px;
+              background:#b91c1c;
+              color:#fefce8;
+              font-size:0.85rem;
+              text-decoration:none;
+            ">
+              🎧 Écouter le message du jour
+            </a>
+          </p>
           <p><em>On commence en douceur… le reste arrive au fil des jours.</em></p>
         `
       },
@@ -579,10 +580,23 @@
         type: "souvenir",
         icon: "📸",
         html: `
-          <p>Aujourd’hui, j’ai envie de ramener un souvenir au premier plan. Pas forcément un grand moment, parfois c’est juste un détail qui reste.</p>
-          <p>Je te laisse choisir toi aussi un souvenir qui te fait sourire quand tu penses à nous&nbsp;: un trajet, un fou rire, un moment improbable, une soirée toute simple…</p>
-          <p>Si tu as une photo qui va avec, garde-la précieusement. Un jour on se fera une petite collection «&nbsp;nous&nbsp;» rien qu’avec ces instants-là.</p>
-          <p><em>On avance dans décembre avec ce mélange de nostalgie et de gratitude&nbsp;: on a déjà vécu beaucoup… et on n’a pas fini.</em></p>
+          <p>Aujourd’hui, j’ai envie de remettre quelques souvenirs au premier plan.</p>
+          <p>Pas forcément que des grands moments, parfois juste quelques détails qui restent.</p>
+          <p>J’ai rassemblé quelques photos qui, pour moi, racontent un morceau de nous : des instants simples, un peu de nostalgie, un peu de lumière, et beaucoup de douceur.</p>
+          <p>
+            <a href="https://drive.google.com/drive/folders/1OQQLYbW5N9r5bWy_iJ4lQ00vKLIHKozL?usp=sharing" target="_blank" rel="noopener" style="
+              display:inline-block;
+              margin-top:6px;
+              padding:6px 12px;
+              border-radius:999px;
+              background:#ea580c;
+              color:#fff7ed;
+              font-size:0.85rem;
+              text-decoration:none;
+            ">
+              📸 Ouvrir l’album du jour
+            </a>
+          </p>
         `
       },
       {
@@ -591,15 +605,29 @@
         type: "defi",
         icon: "🕯️",
         html: `
-          <p>Défi du jour&nbsp;: ce soir, on se bloque un vrai moment cocooning.</p>
-          <p><strong>Programme conseillé (adaptable à la Xav) :</strong></p>
+          <p>Aujourd’hui, je te propose un petit défi cocooning.</p>
+          <p>Ce soir, on se bloque un vrai moment rien que pour nous, sans notifications, sans “il faut que…”, sans culpabilité.</p>
+          <p>Tu peux piocher dans quelques idées que je t’ai préparées :</p>
           <ul>
-            <li>On choisit un film ou une série qu’on regarde vraiment (pas en scrollant à côté).</li>
-            <li>On coupe les notifications autant que possible.</li>
-            <li>Plaid, position confortable, boisson chaude ou autre plaisir autorisé.</li>
+            <li>Films ou séries à regarder ensemble, sans autre écran en parallèle.</li>
+            <li>Ambiance à installer : lumière douce, plaid, boisson, position confortable.</li>
+            <li>Petit rituel pour vraiment débrancher quelques instants.</li>
           </ul>
-          <p>Option bonus&nbsp;: un câlin qui dure plus de 7 secondes (les études disent que c’est le minimum pour faire du bien… on peut viser plus haut 😏).</p>
-          <p><em>L’idée, ce n’est pas de faire compliqué, c’est juste de se rappeler qu’on peut encore fabriquer des petits moments à nous.</em></p>
+          <p>
+            <a href="https://drive.google.com/file/d/10-d-k7yXdt7OOjWlumm0H5EbEFeqWwEi/view?usp=sharing" target="_blank" rel="noopener" style="
+              display:inline-block;
+              margin-top:4px;
+              padding:6px 12px;
+              border-radius:999px;
+              background:#16a34a;
+              color:#ecfdf3;
+              font-size:0.85rem;
+              text-decoration:none;
+            ">
+              🕯️ Découvrir la surprise cocooning
+            </a>
+          </p>
+          <p><em>Le but, ce n’est pas de faire quelque chose d’extraordinaire, juste de se fabriquer un moment doux au milieu du reste.</em></p>
         `
       },
       {
@@ -972,9 +1000,6 @@
     }
 
     createSnowflakes();
-    window.addEventListener("resize", () => {
-      // Option : adapter lors d'un resize important (ici on laisse simple)
-    });
   </script>
 </body>
 </html>
