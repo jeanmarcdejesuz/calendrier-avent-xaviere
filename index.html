@@ -1,0 +1,890 @@
+const debugAlwaysOpen = true;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calendrier de l'Avent de Xavière</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --card: #1f2937;
+      --accent: #f59e0b;
+      --accent-soft: rgba(245, 158, 11, 0.18);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --radius-lg: 18px;
+      --radius-xl: 26px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      padding: 24px 16px 40px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      margin: 0 0 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    header h1 span {
+      color: var(--accent);
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .tagline {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+
+    .calendar-wrapper {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 64, 175, 0.3));
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 18px 16px 22px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-inline: 4px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .calendar-title span.icon {
+      font-size: 1.1rem;
+    }
+
+    .calendar-subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 800px) {
+      .calendar {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 540px) {
+      .calendar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .day-card {
+      position: relative;
+      background: radial-gradient(circle at top, rgba(248, 250, 252, 0.05), rgba(15, 23, 42, 0.95));
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 10px 9px;
+      min-height: 80px;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out, background 0.12s ease-out;
+      font-size: 0.82rem;
+    }
+
+    .day-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at top left, rgba(248, 250, 252, 0.18), transparent 55%);
+      transition: opacity 0.12s ease-out;
+    }
+
+    .day-card:hover:not(.locked) {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.7);
+      border-color: rgba(249, 250, 251, 0.5);
+    }
+
+    .day-card:hover:not(.locked)::before {
+      opacity: 1;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .day-number {
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .day-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .day-title {
+      font-size: 0.78rem;
+      color: #e5e7eb;
+      margin: 0;
+    }
+
+    .day-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .day-type {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .day-icon {
+      font-size: 1rem;
+    }
+
+    .locked {
+      border-style: dashed;
+      border-color: rgba(148, 163, 184, 0.55);
+      background: radial-gradient(circle at bottom, rgba(15, 23, 42, 0.95), #020617);
+      cursor: default;
+      opacity: 0.9;
+    }
+
+    .locked .day-title {
+      color: var(--muted);
+    }
+
+    .locked .day-label {
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .locked .day-foot .day-type {
+      color: var(--muted);
+    }
+
+    .locked .day-icon {
+      opacity: 0.75;
+    }
+
+    .legend {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+      margin-right: 4px;
+      background: var(--accent);
+      display: inline-block;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 8px;
+    }
+
+    /* Modal */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 40;
+    }
+
+    .modal-backdrop.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: radial-gradient(circle at top, rgba(248, 250, 252, 0.08), rgba(15, 23, 42, 0.98));
+      border-radius: 22px;
+      max-width: 560px;
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      box-shadow: var(--shadow-soft);
+      padding: 18px 18px 16px;
+      position: relative;
+      max-height: min(520px, 90vh);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .modal-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .modal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      padding: 3px 9px 3px 5px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--muted);
+    }
+
+    .modal-pill span.icon {
+      font-size: 0.9rem;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      border: none;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      border-radius: 999px;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.12s ease-out, color 0.12s ease-out, transform 0.08s ease-out;
+    }
+
+    .modal-close:hover {
+      background: rgba(148, 163, 184, 0.25);
+      color: #f9fafb;
+      transform: translateY(-1px);
+    }
+
+    .modal-body {
+      font-size: 0.9rem;
+      color: #e5e7eb;
+      margin-top: 4px;
+      padding-right: 4px;
+      overflow-y: auto;
+    }
+
+    .modal-body p {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .modal-body strong {
+      color: #fef9c3;
+    }
+
+    .modal-footer {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .modal-footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .modal-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .pill-type {
+      font-size: 0.76rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .pill-type.message {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+    }
+
+    .pill-type.souvenir {
+      background: rgba(52, 211, 153, 0.18);
+      color: #6ee7b7;
+    }
+
+    .pill-type.defi {
+      background: rgba(244, 114, 182, 0.18);
+      color: #f9a8d4;
+    }
+
+    .pill-type.chiens {
+      background: rgba(96, 165, 250, 0.18);
+      color: #bfdbfe;
+    }
+
+    .pill-type.cadeau {
+      background: rgba(251, 191, 36, 0.18);
+      color: #facc15;
+    }
+
+    .pill-type.final {
+      background: rgba(248, 250, 252, 0.08);
+      color: #fefce8;
+    }
+
+    .note-debug {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0.9;
+    }
+
+    .note-debug strong {
+      color: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Calendrier de l'Avent de <span>Xavière</span></h1>
+      <p>24 petites surprises pour célébrer l'amour, la complicité et la magie de décembre.</p>
+      <div class="tagline">Chaque jour, une case. Chaque case, un morceau de nous. 💛</div>
+    </header>
+
+    <main>
+      <section class="calendar-wrapper">
+        <div class="calendar-header">
+          <div class="calendar-title">
+            <span class="icon">🎄</span>
+            <span>Décembre 2025 &nbsp;•&nbsp; 24 jours de surprises</span>
+          </div>
+          <div class="calendar-subtitle">
+            Clique sur la case du jour pour découvrir ta surprise.
+          </div>
+        </div>
+
+        <div id="calendar" class="calendar"></div>
+
+        <div class="legend">
+          <div>
+            <span class="legend-item"><span class="legend-dot"></span>Message / souvenir / défi du jour</span>
+            <span class="legend-item">🔒 Case encore fermée si on n’y est pas encore</span>
+          </div>
+        </div>
+        <div class="note-debug">
+          <strong>Note technique :</strong> les cases futures de décembre se verrouillent automatiquement.
+          Tu peux changer ce comportement dans le code (variable <code>debugAlwaysOpen</code>).
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-title-block">
+          <div class="modal-pill">
+            <span class="icon">✨</span>
+            <span id="modalDayLabel">Jour 1</span>
+          </div>
+          <div id="modalTitle" class="modal-title">Titre</div>
+        </div>
+        <button class="modal-close" type="button" id="modalCloseBtn" aria-label="Fermer">
+          ✕
+        </button>
+      </div>
+      <div id="modalBody" class="modal-body">
+        <!-- Contenu injecté -->
+      </div>
+      <div class="modal-footer">
+        <span id="modalTypePill" class="pill-type">Type</span>
+        <span>Avec amour, JM 💛</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------- PARAMÈTRES --------
+    // Passe à true si tu veux que toutes les cases soient cliquables,
+    // même si on n’est pas encore au bon jour.
+    const debugAlwaysOpen = false;
+
+    // Contenu des 24 jours – tu peux modifier les textes comme tu veux.
+    const daysData = [
+      {
+        day: 1,
+        title: "Bienvenue dans ton calendrier",
+        type: "message",
+        icon: "💌",
+        html: `
+          <p>Mon amour,</p>
+          <p>On démarre ce calendrier rien que pour toi. Chaque jour de décembre, tu trouveras ici une pensée, un souvenir, un sourire ou un petit défi à partager ensemble.</p>
+          <p><strong>Merci d’être toi.</strong> On commence ce mois en douceur, avec l’envie de le rendre aussi beau que possible pour toi.</p>
+        `
+      },
+      {
+        day: 2,
+        title: "Un souvenir qui me fait sourire",
+        type: "souvenir",
+        icon: "📸",
+        html: `
+          <p>Aujourd’hui, je veux te rappeler un souvenir qui me fait sourire à chaque fois.</p>
+          <p>Tu peux choisir une photo qui te parle (ou que je t’enverrai) et te rappeler ce moment : ce qu’on faisait, ce qu’on ressentait, pourquoi c’était toi et moi, simplement.</p>
+          <p><strong>On a déjà une belle collection de souvenirs, et ce n’est que le début.</strong></p>
+        `
+      },
+      {
+        day: 3,
+        title: "Défi cocooning",
+        type: "defi",
+        icon: "🕯️",
+        html: `
+          <p>Défi du jour : ce soir, on se fait une vraie parenthèse.</p>
+          <p><strong>Consigne :</strong> on choisit un film ou une série, on coupe les notifications, et on se prend un moment sans téléphone, juste nous.</p>
+          <p>Option bonus : plaid + boisson chaude + câlin obligatoire.</p>
+        `
+      },
+      {
+        day: 4,
+        title: "Une qualité que j’admire chez toi",
+        type: "message",
+        icon: "🌟",
+        html: `
+          <p>Aujourd’hui, je veux te parler d’une de tes qualités : <strong>ta capacité à tenir, même quand c’est lourd.</strong></p>
+          <p>Tu encaisses, tu avances, tu fais au mieux pour tout le monde. Même quand tu doutes, tu continues.</p>
+          <p>Je le vois, je le respecte, et j’en suis fier.</p>
+        `
+      },
+      {
+        day: 5,
+        title: "Message de Lou & Alaska",
+        type: "chiens",
+        icon: "🐺",
+        html: `
+          <p><strong>Traduction simultanée Lou & Alaska :</strong></p>
+          <p>« Merci pour toutes les caresses, les sorties, les “non” qu’on fait semblant de ne pas comprendre, et les moments où on squatte un peu trop le canapé. »</p>
+          <p>Ils confirment qu’ils t’aiment très fort et qu’ils sont très heureux d’être dans ta meute.</p>
+        `
+      },
+      {
+        day: 6,
+        title: "Petit cadeau immatériel",
+        type: "cadeau",
+        icon: "🎁",
+        html: `
+          <p>Aujourd’hui, tu gagnes un <strong>bon pour une soirée où tu ne gères rien.</strong></p>
+          <p>C’est moi qui prends le relais : logistique, repas simple, organisation. Toi, tu as le droit de souffler.</p>
+          <p>Tu choisis le soir, et on l’applique. Deal ?</p>
+        `
+      },
+      {
+        day: 7,
+        title: "La chanson du jour",
+        type: "souvenir",
+        icon: "🎶",
+        html: `
+          <p>Je te propose aujourd’hui une chanson qui me fait penser à toi ou à nous.</p>
+          <p>Tu peux l’écouter au calme, dans la voiture, ou pendant que tu te poses. L’idée, c’est juste de créer une petite bulle musicale pour toi.</p>
+          <p>Et si tu veux, on fera une mini playlist spéciale “Xav du mois de décembre”.</p>
+        `
+      },
+      {
+        day: 8,
+        title: "Souvenir drôle",
+        type: "souvenir",
+        icon: "😂",
+        html: `
+          <p>Aujourd’hui, on se rappelle un moment vraiment drôle qu’on a vécu.</p>
+          <p>Tu peux choisir un souvenir qui te fait rire (une situation absurde, une galère, un fou rire, un truc qui ne s’invente pas).</p>
+          <p><strong>Objectif :</strong> si tu souris en y repensant, c’est gagné.</p>
+        `
+      },
+      {
+        day: 9,
+        title: "Défi massage",
+        type: "defi",
+        icon: "💆‍♀️",
+        html: `
+          <p>Défi du jour : tu as droit à <strong>10 minutes de massage</strong>.</p>
+          <p>Zone au choix : nuque, épaules, dos, mains… Tu choisis, je m’exécute.</p>
+          <p>Pas de négociation possible, le bon est valable une fois, mais on peut en discuter. 😉</p>
+        `
+      },
+      {
+        day: 10,
+        title: "Petit boost pour toi",
+        type: "message",
+        icon: "⚡",
+        html: `
+          <p>Je sais que tu portes beaucoup de choses, visibles et invisibles.</p>
+          <p>Aujourd’hui, je veux juste te rappeler que tu as le droit de ralentir, de dire stop, de poser des limites, et de penser à toi.</p>
+          <p><strong>Tu n’as pas à tout porter toute seule.</strong> Je suis là, vraiment.</p>
+        `
+      },
+      {
+        day: 11,
+        title: "Clin d’œil chantier / projets",
+        type: "souvenir",
+        icon: "🛠️",
+        html: `
+          <p>On a déjà partagé des projets, des idées, des chantiers, des plans parfois un peu fous.</p>
+          <p>Aujourd’hui, on se rappelle un moment où on s’est dit : « OK… c’est un peu le bazar, mais on va y arriver. »</p>
+          <p>C’est aussi ça, nous : se débrouiller ensemble dans le réel.</p>
+        `
+      },
+      {
+        day: 12,
+        title: "Un peu d’humour",
+        type: "message",
+        icon: "🤣",
+        html: `
+          <p>Objectif du jour : au moins <strong>un vrai fou rire</strong>.</p>
+          <p>On peut se raconter un truc absurde, une anecdote, une imitation, une private joke… Peu importe tant que ça nous fait marrer.</p>
+          <p>Parce que l’humour, chez nous, c’est aussi un super pouvoir.</p>
+        `
+      },
+      {
+        day: 13,
+        title: "Micro-vidéo pour toi",
+        type: "message",
+        icon: "🎥",
+        html: `
+          <p>Aujourd’hui, tu auras droit à une petite vidéo de moi, rien que pour toi.</p>
+          <p>Un mot, un sourire, un clin d’œil. Tu pourras la regarder quand tu veux, la garder, la supprimer, la revoir mille fois… comme tu veux.</p>
+          <p><strong>Juste un instant de moi vers toi.</strong></p>
+        `
+      },
+      {
+        day: 14,
+        title: "Ce week-end, on fait quoi ?",
+        type: "defi",
+        icon: "📅",
+        html: `
+          <p>On choisit ensemble une chose simple à faire ce week-end : un brunch maison, une balade, un moment canapé, un truc juste pour nous.</p>
+          <p>On l’écrit, on le cale, et on le respecte. Comme un mini rendez-vous sacré.</p>
+        `
+      },
+      {
+        day: 15,
+        title: "Famille & tribu",
+        type: "souvenir",
+        icon: "👨‍👩‍👧‍👦",
+        html: `
+          <p>Aujourd’hui, on pense à notre drôle de tribu, à tout ce que ça implique, au joyeux bordel, aux moments de fatigue, mais aussi à tous les instants précieux.</p>
+          <p><strong>Tu fais beaucoup pour les tiens.</strong> Je le vois, même quand ce n’est pas dit.</p>
+        `
+      },
+      {
+        day: 16,
+        title: "Défi tendresse",
+        type: "defi",
+        icon: "💞",
+        html: `
+          <p>Défi du jour : au moins un vrai moment de tendresse consciente.</p>
+          <p>Un câlin, un moment collé-serré, une main tenue plus longtemps que d’habitude, un regard sans paroles.</p>
+          <p>Juste nous, sans faire autre chose en même temps.</p>
+        `
+      },
+      {
+        day: 17,
+        title: "Pause pour toi",
+        type: "message",
+        icon: "🧘‍♀️",
+        html: `
+          <p>Aujourd’hui, je t’invite à prendre <strong>10 minutes rien que pour toi</strong>.</p>
+          <p>Tu choisis : silence, musique, douche chaude, respiration profonde, balade courte, peu importe… mais tu le fais pour toi, pas pour les autres.</p>
+          <p>Et si tu veux, on peut le faire à deux.</p>
+        `
+      },
+      {
+        day: 18,
+        title: "Lou & Alaska – épisode 2",
+        type: "chiens",
+        icon: "🐾",
+        html: `
+          <p>Les poilus du jour :</p>
+          <p>« Aujourd’hui, on réclame une séance câlins / gratouilles spéciale Xav. On promet de faire (un peu) les gentils en échange. »</p>
+          <p>Option bonus : une photo de toi avec eux pour la collection souvenirs.</p>
+        `
+      },
+      {
+        day: 19,
+        title: "Pourquoi je t’aime – version 2",
+        type: "message",
+        icon: "❤️",
+        html: `
+          <p>Je t’aime aussi pour <strong>ta façon de voir les choses</strong>, ton regard sur les gens, sur les situations, sur la vie.</p>
+          <p>Tu peux être dure avec toi-même, mais tu es souvent très douce avec les autres.</p>
+          <p>Et ça, c’est une force immense.</p>
+        `
+      },
+      {
+        day: 20,
+        title: "Un autre petit cadeau immatériel",
+        type: "cadeau",
+        icon: "🎁",
+        html: `
+          <p>Aujourd’hui, tu gagnes un <strong>bon pour un repas que je prépare pour toi</strong>.</p>
+          <p>Simple, sans chichi, mais fait pour te faire plaisir. On choisira ensemble le moment.</p>
+        `
+      },
+      {
+        day: 21,
+        title: "Un peu de nostalgie",
+        type: "souvenir",
+        icon: "🕰️",
+        html: `
+          <p>On se replonge dans nos débuts, dans ce qui nous a rapprochés, dans les premiers moments importants.</p>
+          <p>Tu peux choisir un souvenir qui, pour toi, marque un tournant entre toi et moi.</p>
+        `
+      },
+      {
+        day: 22,
+        title: "On se rapproche de Noël",
+        type: "message",
+        icon: "✨",
+        html: `
+          <p>Les fêtes approchent, avec tout ce que ça représente : organisation, famille, émotions, fatigue, rires, souvenirs.</p>
+          <p>Je veux juste te dire : <strong>merci d’être là dans tout ça</strong>, et de faire partie de ce qu’on construit ensemble.</p>
+        `
+      },
+      {
+        day: 23,
+        title: "Anti-stress spécial Xav",
+        type: "message",
+        icon: "🌙",
+        html: `
+          <p>Ce soir, tu as le droit à une mini routine anti-stress.</p>
+          <p>On peut prendre 5 minutes pour respirer ensemble, se poser, se parler ou se taire, mais se recentrer.</p>
+          <p>Tu n’as pas besoin d’être parfaite. Juste présente, comme tu le fais déjà.</p>
+        `
+      },
+      {
+        day: 24,
+        title: "Finale – Merci d’être toi",
+        type: "final",
+        icon: "🎁",
+        html: `
+          <p>On arrive à la fin de ce calendrier, mais pas à la fin de ce que j’ai à te dire.</p>
+          <p><strong>Merci pour tout ce que tu es, tout ce que tu fais, tout ce que tu donnes, même quand tu as l’impression que ce n’est pas assez.</strong></p>
+          <p>Je t’aime, et je suis heureux de partager cette route-là avec toi.</p>
+          <p>Joyeux Noël, mon amour. 💛</p>
+        `
+      }
+    ];
+
+    function getTypeLabel(type) {
+      switch (type) {
+        case "message":
+          return "Message du jour";
+        case "souvenir":
+          return "Souvenir";
+        case "defi":
+          return "Défi à deux";
+        case "chiens":
+          return "Lou & Alaska";
+        case "cadeau":
+          return "Cadeau immatériel";
+        case "final":
+          return "Finale";
+        default:
+          return "Surprise";
+      }
+    }
+
+    function getTypeClass(type) {
+      switch (type) {
+        case "message":
+          return "message";
+        case "souvenir":
+          return "souvenir";
+        case "defi":
+          return "defi";
+        case "chiens":
+          return "chiens";
+        case "cadeau":
+          return "cadeau";
+        case "final":
+          return "final";
+        default:
+          return "";
+      }
+    }
+
+    // Construction du calendrier
+    const calendarEl = document.getElementById("calendar");
+    const now = new Date();
+    const today = now.getDate();
+    const isDecember = now.getMonth() === 11; // 0 = janvier, 11 = décembre
+
+    daysData.forEach((dayData) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "day-card";
+      card.setAttribute("data-day", String(dayData.day));
+
+      const typeLabel = getTypeLabel(dayData.type);
+
+      const isLocked = !debugAlwaysOpen && isDecember && dayData.day > today && dayData.day <= 24;
+
+      if (isLocked) {
+        card.classList.add("locked");
+      }
+
+      card.innerHTML = `
+        <div class="day-header">
+          <span class="day-number">${dayData.day}</span>
+          <span class="day-label">${isLocked ? "Bientôt" : "Ouvert"}</span>
+        </div>
+        <p class="day-title">
+          ${isLocked ? "Patience… ta surprise arrive." : dayData.title}
+        </p>
+        <div class="day-foot">
+          <span class="day-type">${isLocked ? "Case encore fermée" : typeLabel}</span>
+          <span class="day-icon">${isLocked ? "🔒" : (dayData.icon || "✨")}</span>
+        </div>
+      `;
+
+      if (!isLocked || !isDecember) {
+        card.addEventListener("click", () => openModal(dayData));
+      }
+
+      calendarEl.appendChild(card);
+    });
+
+    // Gestion du modal
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+    const modalDayLabel = document.getElementById("modalDayLabel");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalTypePill = document.getElementById("modalTypePill");
+
+    function openModal(dayData) {
+      modalDayLabel.textContent = `Jour ${dayData.day}`;
+      modalTitle.textContent = dayData.title;
+      modalBody.innerHTML = dayData.html;
+      modalTypePill.textContent = getTypeLabel(dayData.type);
+      modalTypePill.className = `pill-type ${getTypeClass(dayData.type)}`;
+      modalBackdrop.classList.add("visible");
+      modalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("visible");
+      modalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    modalCloseBtn.addEventListener("click", closeModal);
+    modalBackdrop.addEventListener("click", (event) => {
+      if (event.target === modalBackdrop) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && modalBackdrop.classList.contains("visible")) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
