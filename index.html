@@ -32,6 +32,43 @@
       display: flex;
       align-items: stretch;
       justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Couche de neige */
+    .snow-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -10vh;
+      color: #f9fafb;
+      opacity: 0.8;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+      animation-name: snow-fall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    @keyframes snow-fall {
+      0% {
+        transform: translateY(-10vh) translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) translateX(40px);
+        opacity: 0;
+      }
     }
 
     .page {
@@ -39,6 +76,8 @@
       max-width: 1100px;
       padding: 24px 16px 40px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1; /* au-dessus de la neige */
     }
 
     header {
@@ -208,6 +247,22 @@
       transition: transform 0.12s ease-out;
     }
 
+    .day-card:hover:not(.locked) .day-icon {
+      animation: reindeerWiggle 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes reindeerWiggle {
+      0% {
+        transform: translateY(0) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-2px) rotate(-4deg);
+      }
+      100% {
+        transform: translateY(1px) rotate(3deg);
+      }
+    }
+
     .locked {
       border-style: dashed;
       border-color: rgba(248, 113, 113, 0.9);
@@ -231,6 +286,7 @@
 
     .locked .day-icon {
       opacity: 0.75;
+      animation: none;
     }
 
     .legend {
@@ -268,24 +324,6 @@
 
     .note-debug strong {
       color: #374151;
-    }
-
-    /* --- Animations au survol des cases --- */
-
-    .day-card:hover:not(.locked) .day-icon {
-      animation: reindeerWiggle 0.6s ease-in-out infinite alternate;
-    }
-
-    @keyframes reindeerWiggle {
-      0% {
-        transform: translateY(0) rotate(0deg);
-      }
-      50% {
-        transform: translateY(-2px) rotate(-4deg);
-      }
-      100% {
-        transform: translateY(1px) rotate(3deg);
-      }
     }
 
     /* Modal */
@@ -452,42 +490,12 @@
       color: #7f1d1d;
     }
 
-    /* --- Overlay des rennes qui s'envolent --- */
-
-    .flight-overlay {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at center, rgba(254, 249, 195, 0.6), rgba(0, 0, 0, 0.65));
-      display: none;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      z-index: 60;
-      pointer-events: none;
-    }
-
-    .flight-overlay.visible {
-      display: flex;
-    }
-
-    .flight-reindeer,
-    .flight-trail {
-      position: absolute;
-      white-space: nowrap;
-      will-change: transform, opacity;
-    }
-
-    .flight-reindeer {
-      font-size: 3.2rem;
-    }
-
-    .flight-trail {
-      font-size: 2.2rem;
-      opacity: 0.9;
-    }
   </style>
 </head>
 <body>
+  <!-- Neige -->
+  <div class="snow-layer" id="snowLayer"></div>
+
   <div class="page">
     <header>
       <h1>Calendrier de l'Avent de <span>Xavière</span></h1>
@@ -538,9 +546,7 @@
           ✕
         </button>
       </div>
-      <div id="modalBody" class="modal-body">
-        <!-- Contenu injecté -->
-      </div>
+      <div id="modalBody" class="modal-body"></div>
       <div class="modal-footer">
         <span id="modalTypePill" class="pill-type">Type</span>
         <span>Avec amour, Jean-Marc 💛</span>
@@ -548,16 +554,9 @@
     </div>
   </div>
 
-  <!-- Animation féérique des rennes -->
-  <div id="flightOverlay" class="flight-overlay" aria-hidden="true">
-    <div class="flight-reindeer">🦌🦌</div>
-    <div class="flight-trail">✨✨✨</div>
-  </div>
-
   <script>
     // -------- PARAMÈTRES --------
     const debugAlwaysOpen = false;
-    const FLIGHT_DURATION = 3600; // ~3,6 secondes
 
     // Contenu des 24 jours
     const daysData = [
@@ -905,7 +904,7 @@
       `;
 
       if (!isLocked || !isDecember) {
-        card.addEventListener("click", () => handleDayClick(dayData, card));
+        card.addEventListener("click", () => openModal(dayData));
       }
 
       calendarEl.appendChild(card);
@@ -947,84 +946,35 @@
       }
     });
 
-    // Overlay des rennes
-    const flightOverlay = document.getElementById("flightOverlay");
-    const flightReindeer = flightOverlay.querySelector(".flight-reindeer");
-    const flightTrail = flightOverlay.querySelector(".flight-trail");
+    // Neige dynamique
+    const snowLayer = document.getElementById("snowLayer");
 
-    function handleDayClick(dayData, cardEl) {
-      playFlightAnimation(cardEl, () => {
-        openModal(dayData);
-      });
+    function createSnowflakes(count = 70) {
+      const width = window.innerWidth;
+
+      for (let i = 0; i < count; i++) {
+        const flake = document.createElement("div");
+        flake.className = "snowflake";
+        flake.textContent = Math.random() < 0.3 ? "❆" : (Math.random() < 0.6 ? "❄" : "✼");
+
+        const size = 8 + Math.random() * 14; // 8 à 22 px
+        const startLeft = Math.random() * width;
+        const duration = 10 + Math.random() * 14; // 10 à 24 s
+        const delay = Math.random() * -duration; // décalage pour éviter que tout parte en même temps
+
+        flake.style.fontSize = `${size}px`;
+        flake.style.left = `${startLeft}px`;
+        flake.style.animationDuration = `${duration}s`;
+        flake.style.animationDelay = `${delay}s`;
+
+        snowLayer.appendChild(flake);
+      }
     }
 
-    function playFlightAnimation(cardEl, onComplete) {
-      // Affiche l'overlay
-      flightOverlay.classList.add("visible");
-      flightOverlay.setAttribute("aria-hidden", "false");
-
-      // Position de départ : hors de l'écran, en bas à droite
-      const overlayRect = flightOverlay.getBoundingClientRect();
-      const startX = overlayRect.width + 150;
-      const startY = overlayRect.height + 100;
-
-      // Cible : centre de la carte cliquée
-      const cardRect = cardEl.getBoundingClientRect();
-      const targetX = cardRect.left + cardRect.width / 2 - overlayRect.left;
-      const targetY = cardRect.top + cardRect.height / 2 - overlayRect.top;
-
-      // Point intermédiaire pour faire une trajectoire légère en arc
-      const midX = (startX + targetX) / 2;
-      const midY = Math.min(startY, targetY) - 200; // on remonte un peu pour l'effet "envol"
-
-      // Reset styles
-      flightReindeer.style.opacity = "1";
-      flightTrail.style.opacity = "1";
-
-      // Animation des rennes
-      const reindeerAnim = flightReindeer.animate(
-        [
-          { transform: `translate(${startX}px, ${startY}px) scale(0.6)`, opacity: 0 },
-          { transform: `translate(${midX}px, ${midY}px) scale(1.1)`, opacity: 1, offset: 0.5 },
-          { transform: `translate(${targetX}px, ${targetY}px) scale(2.2)`, opacity: 0 }
-        ],
-        {
-          duration: FLIGHT_DURATION,
-          easing: "ease-in-out",
-          fill: "forwards"
-        }
-      );
-
-      // Animation de la traînée
-      const trailAnim = flightTrail.animate(
-        [
-          { transform: `translate(${startX - 40}px, ${startY + 10}px) scale(0.6)`, opacity: 0 },
-          { transform: `translate(${midX - 40}px, ${midY + 10}px) scale(1.0)`, opacity: 1, offset: 0.45 },
-          { transform: `translate(${targetX - 20}px, ${targetY + 10}px) scale(1.4)`, opacity: 0 }
-        ],
-        {
-          duration: FLIGHT_DURATION,
-          easing: "ease-out",
-          fill: "forwards"
-        }
-      );
-
-      Promise.all([reindeerAnim.finished, trailAnim.finished]).then(() => {
-        flightOverlay.classList.remove("visible");
-        flightOverlay.setAttribute("aria-hidden", "true");
-
-        if (typeof onComplete === "function") {
-          onComplete();
-        }
-      }).catch(() => {
-        // En cas d'annulation ou d'erreur, on nettoie quand même
-        flightOverlay.classList.remove("visible");
-        flightOverlay.setAttribute("aria-hidden", "true");
-        if (typeof onComplete === "function") {
-          onComplete();
-        }
-      });
-    }
+    createSnowflakes();
+    window.addEventListener("resize", () => {
+      // Option : adapter lors d'un resize important (ici on laisse simple)
+    });
   </script>
 </body>
 </html>
